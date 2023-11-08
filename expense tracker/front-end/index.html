@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Expense Tracker</title>
+  <style>
+    #expenseForm {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+    }
+
+    #expenseForm label {
+        margin-right: 10px;
+    }
+
+    #expenseForm input, #expenseForm select, #expenseForm button {
+        margin-right: 10px;
+    }
+
+    #expenseForm button {
+        margin-right: 0;
+    }
+
+    #expenseList li {
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+
+    #expenseList li button {
+        margin-left: 10px;
+    }
+
+  </style>
+</head>
+<body>
+  <h1>Expense Tracker</h1>
+  
+  <form id="expenseForm">
+    <label for="expenseAmount">Choose Expense Amount:</label>
+    <input type="number" id="expenseAmount" required><br><br>
+    
+    <label for="expenseDescription">Choose Description:</label>
+    <input type="text" id="expenseDescription" required><br><br>
+    
+    <label for="expenseCategory">Category:</label>
+    <select id="expenseCategory" required>
+      <option value="food">Food</option>
+      <option value="movie">Movie</option>
+      <option value="rent">Rent</option>
+      <option value="recharge">Recharge</option>
+      <option value="outing">Outing</option>
+      <option value="travel">Travel</option>
+      <option value="fuel">Fuel</option>
+    </select><br><br>
+    
+    <button type="submit" value="add expense">Add Expense</button>
+  </form>
+  
+  <ul id="expenseList"></ul>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.0/axios.min.js"></script>
+  <script>
+    const expenseForm = document.getElementById('expenseForm');
+    const expenseList = document.getElementById('expenseList');
+    
+    expenseForm.addEventListener('submit', function(event) {
+      event.preventDefault();
+      const expenseAmount = document.getElementById('expenseAmount').value;
+      const expenseDescription = document.getElementById('expenseDescription').value;
+      const expenseCategory = document.getElementById('expenseCategory').value;
+      const obj = {
+        expenseAmount,
+        expenseDescription,
+        expenseCategory
+      }
+      
+      axios.post("http://localhost:3000/expense/add-data" ,obj)
+        .then(res =>{
+            console.log(res);
+            showItems(res.data.newData);
+            
+        })
+        .catch(e => {
+            console.log(e)
+            document.body.innerHTML=document.body.innerHTML + "<h3>error occured</h3>"
+        })
+
+      
+
+    });
+    
+    function showItems(expense) {
+      document.getElementById("expenseAmount").value = "";
+      document.getElementById("expenseDescription").value = "";
+      document.getElementById("expenseCategory").value = "";
+
+      const expenseInfo = `${expense.expenseAmount}-${expense.expenseDescription}-${expense.expenseCategory}`;
+      const listItem = document.createElement('li');
+      listItem.textContent = expenseInfo;
+      
+      const deleteButton = document.createElement('button');
+      deleteButton.textContent = 'Delete';
+      deleteButton.addEventListener('click', function() {
+        axios.delete(`http://localhost:3000/expense/delete-data/${expense.id}`)
+        .then(res=>{
+          listItem.remove();
+        }).catch(e=>console.log(e));
+        
+      });
+      
+      const editButton = document.createElement('button');
+      editButton.textContent = 'Edit';
+      // editButton.addEventListener('click', function() {
+      //   const [amount, description, category] = expenseInfo.split('-');
+      //   document.getElementById('expenseAmount').value = amount;
+      //   document.getElementById('expenseDescription').value = description;
+      //   document.getElementById('expenseCategory').value = category;
+      //   axios.put(`http://localhost:3000/expense/update-data/${expense.id}`)
+      //   .then(res=>{
+      //     listItem.remove();
+      //   }).catch(e=>console.log(e));
+      // });
+      
+      listItem.appendChild(deleteButton);
+      listItem.appendChild(editButton);
+      expenseList.appendChild(listItem);
+      document.getElementById('expenseAmount').value = '';
+      document.getElementById('expenseDescription').value = '';
+      document.getElementById('expenseCategory').value = '';
+    }
+
+    document.addEventListener("DOMContentLoaded",()=>{
+        axios.get("http://localhost:3000/expense/get-data").then(res =>{
+           for(let i=0; i< res.data.allData.length ;i++){
+            showItems(res.data.allData[i]);
+           }
+        })
+        .catch(e=>console.log(e))
+    })
+
+    
+
+  </script>
+</body>
+</html>
